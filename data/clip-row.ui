@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<requires lib="gtk" version="4.0"/>
+	<template class="ClipRow" parent="GtkListBoxRow">
+		<child>
+			<object class="GtkEditableLabel">
+				<property name="margin-top">16</property>
+				<property name="margin-bottom">16</property>
+				<property name="margin-start">32</property>
+				<property name="margin-end">64</property>
+				<property name="text">Unnamed</property>
+			</object>
+		</child>
+	</template>
+</interface>

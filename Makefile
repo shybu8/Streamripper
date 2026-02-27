@@ -9,7 +9,7 @@ RES_XML = data/resources.gresource.xml
 RES_C = src/resources.c
 RES_H = src/resources.h
 
-SRC = src/main.c src/my-window.c $(RES_C) $(RES_H)
+SRC = src/main.c src/clip-row.c src/my-window.c $(RES_C) $(RES_H)
 
 all: $(SRC)
 	$(CC) \

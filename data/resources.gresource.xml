@@ -2,5 +2,6 @@
 <gresources>
 	<gresource prefix="/org/shybu8/streamripper">
 		<file preprocess="xml-stripblanks" compressed="true">my-window.ui</file>
+		<file preprocess="xml-stripblanks" compressed="true">clip-row.ui</file>
 	</gresource>
 </gresources>

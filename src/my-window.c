@@ -1,4 +1,6 @@
 #include "my-window.h"
+#include "clip-row.h"
+#include "glib.h"
 #include "gtk/gtk.h"
 
 struct _MyWindow {
@@ -33,9 +35,77 @@ struct _MyWindow {
   GtkButton *reset_btn;
   GtkButton *start_stop_btn;
   GtkLabel *timer_label;
+
+  // Service
+  gint64 timer_start_us;
+  gint64 timer_elapsed_us;
+  guint decimal_timer_timout_id;
+  ClipRow *current_row;
 };
 
 G_DEFINE_FINAL_TYPE(MyWindow, my_window, GTK_TYPE_APPLICATION_WINDOW)
+
+static gboolean on_decimal_timer_timeout(void *data) {
+  MyWindow *win = data;
+  gint64 now_us = g_get_monotonic_time();
+  gint64 us = now_us - win->timer_start_us;
+
+  // tenths of a second
+  guint64 t = (guint64)(us / 100000); // 0.1s = 100,000us
+  guint64 sec = t / 10;
+  guint64 dec = t % 10;
+  guint64 min = sec / 60;
+  guint64 hrs = min / 60;
+
+  char buf[64];
+  g_snprintf(buf, sizeof buf, "%02llu:%02llu:%02llu.%llu",
+             (unsigned long long)hrs, (unsigned long long)min,
+             (unsigned long long)sec, (unsigned long long)dec);
+  gtk_label_set_text(GTK_LABEL(win->timer_label), buf);
+
+  return G_SOURCE_CONTINUE;
+}
+
+static void on_start_stop_timer_clicked(GtkButton *btn, void *data) {
+  MyWindow *win = data;
+
+  if (win->decimal_timer_timout_id == 0) {
+    win->timer_start_us = g_get_monotonic_time() - win->timer_elapsed_us;
+    win->decimal_timer_timout_id =
+        g_timeout_add(100, on_decimal_timer_timeout, win);
+    gtk_button_set_label(btn, "Stop");
+  } else {
+    win->timer_elapsed_us = g_get_monotonic_time() - win->timer_start_us;
+    g_source_remove(win->decimal_timer_timout_id);
+    win->decimal_timer_timout_id = 0;
+    gtk_button_set_label(btn, "Start");
+  }
+}
+
+static void on_reset_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+
+  win->timer_start_us = g_get_monotonic_time();
+  win->timer_elapsed_us = 0;
+  on_decimal_timer_timeout(win);
+}
+
+static void on_sidebar_row_selected(GtkListBox *box, GtkListBoxRow *row,
+                                    MyWindow *win) {
+  (void)box;
+  (void)row;
+  (void)win;
+  g_debug("Row selected");
+}
+
+static void on_add_clip_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+
+  gtk_list_box_append(GTK_LIST_BOX(win->sidebar_list_box),
+                      GTK_WIDGET(clip_row_new()));
+}
 
 static void my_window_class_init(MyWindowClass *klass) {
   GtkWidgetClass *wc = GTK_WIDGET_CLASS(klass);
@@ -67,10 +137,23 @@ static void my_window_class_init(MyWindowClass *klass) {
   gtk_widget_class_bind_template_child(wc, MyWindow, reset_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, start_stop_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, timer_label);
+
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_start_stop_timer_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_reset_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_sidebar_row_selected);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_add_clip_clicked);
 }
 
 static void my_window_init(MyWindow *self) {
   gtk_widget_init_template(GTK_WIDGET(self));
+  ClipRow *initial_row = clip_row_new();
+  gtk_list_box_append(GTK_LIST_BOX(self->sidebar_list_box),
+                      GTK_WIDGET(initial_row));
+  self->current_row = initial_row;
 }
 
 MyWindow *my_window_new(GtkApplication *app) {
