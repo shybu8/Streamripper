@@ -4,6 +4,7 @@
 	<template class="MyWindow" parent="GtkApplicationWindow">
 		<property name="title">Streamripper</property>
 		<child>
+			<!-- Root -->
 			<object class="GtkBox" id="root">
 				<property name="orientation">vertical</property>
 				<property name="margin-top">4</property>
@@ -11,8 +12,10 @@
 				<property name="margin-start">4</property>
 				<property name="margin-end">4</property>
 				<child>
+					<!-- Upper bar -->
 					<object class="GtkCenterBox" id="upper_bar">
 						<property name="orientation">horizontal</property>
+						<property name="margin-bottom">8</property>
 						<child type="start">
 							<object class="GtkBox">
 								<property name="orientation">horizontal</property>
@@ -20,6 +23,11 @@
 								<child>
 									<object class="GtkButton" id="source_btn">
 										<property name="label">Source</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkButton" id="add_clip_btn">
+										<property name="label">Add clip</property>
 									</object>
 								</child>
 								<child>
@@ -35,47 +43,322 @@
 							</object>
 						</child>
 						<child type="end">
-							<object class="GtkMenuButton">
+							<object class="GtkMenuButton" id="settings_mbtn">
 							</object>
 						</child>
 					</object>
 				</child>
 				<child>
+					<!-- Center paned -->
 					<object class="GtkPaned">
 						<property name="vexpand">true</property>
+						<property name="position">256</property>
 						<child type="start">
-							<object class="GtkLabel">
-								<property name="label">test</property>
+							<object class="GtkScrolledWindow">
+								<property name="hscrollbar-policy">never</property>
+								<child>
+									<object class="GtkListBox" id="sidebar_list_box">
+										<property name="selection-mode">single</property>
+										<child>
+											<object class="GtkListBoxRow">
+												<child>
+													<object class="GtkEditableLabel">
+														<property name="margin-top">16</property>
+														<property name="margin-bottom">16</property>
+														<property name="margin-start">32</property>
+														<property name="margin-end">32</property>
+														<property name="text">Unnamed 0</property>
+														<!-- <property name="placeholder-text">Clip name</property> -->
+													</object>
+												</child>
+											</object>
+										</child>
+									</object>
+								</child>
 							</object>
 						</child>
 						<child type="end">
-							<object class="GtkLabel">
-								<property name="label">test</property>
+							<object class="GtkBox">
+								<property name="orientation">vertical</property>
+								<property name="spacing">64</property>
+								<property name="margin-start">8</property>
+								<property name="margin-top">8</property>
+								<child>
+									<!-- Timings box -->
+									<object class="GtkBox">
+										<property name="orientation">vertical</property>
+										<property name="spacing">16</property>
+										<child>
+											<object class="GtkGrid">
+												<property name="row-spacing">16</property>
+												<property name="column-spacing">8</property>
+												<child>
+													<!-- Start TS label -->
+													<object class="GtkLabel">
+														<property name="label">Start ts:</property>
+														<layout>
+															<property name="column">0</property>
+															<property name="row">0</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- End TS label -->
+													<object class="GtkLabel">
+														<property name="label">Start ts:</property>
+														<layout>
+															<property name="column">0</property>
+															<property name="row">1</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- Start TS entry -->
+													<object class="GtkEntry" id="start_ts_entry">
+														<property name="text">0.0</property>
+														<property name="placeholder-text">Start TS</property>
+														<layout>
+															<property name="column">1</property>
+															<property name="row">0</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- End TS entry -->
+													<object class="GtkEntry" id="end_ts_entry">
+														<property name="text">0.0</property>
+														<property name="placeholder-text">End TS</property>
+														<layout>
+															<property name="column">1</property>
+															<property name="row">1</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- Start TS plus btn -->
+													<object class="GtkButton" id="start_ts_plus_btn">
+														<property name="label">+</property>
+														<layout>
+															<property name="column">3</property>
+															<property name="row">0</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- End TS plus btn -->
+													<object class="GtkButton" id="end_ts_plus_btn">
+														<property name="label">+</property>
+														<layout>
+															<property name="column">3</property>
+															<property name="row">1</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- Start TS minus btn -->
+													<object class="GtkButton" id="start_ts_minus_btn">
+														<property name="label">-</property>
+														<layout>
+															<property name="column">2</property>
+															<property name="row">0</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- End TS minus btn -->
+													<object class="GtkButton" id="end_ts_minus_btn">
+														<property name="label">-</property>
+														<layout>
+															<property name="column">2</property>
+															<property name="row">1</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- Start TS SpinButton -->
+													<object class="GtkAdjustment" id="start_ts_adj">
+														<property name="lower">0</property>
+														<property name="upper">100</property>
+														<property name="step-increment">1</property>
+														<property name="page-increment">10</property>
+														<property name="value">5</property>
+													</object>
+													<object class="GtkSpinButton" id="start_ts_spin_btn">
+														<property name="adjustment">start_ts_adj</property>
+														<layout>
+															<property name="column">4</property>
+															<property name="row">0</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- End TS SpinButton -->
+													<object class="GtkAdjustment" id="end_ts_adj">
+														<property name="lower">0</property>
+														<property name="upper">100</property>
+														<property name="step-increment">1</property>
+														<property name="page-increment">10</property>
+														<property name="value">5</property>
+													</object>
+													<object class="GtkSpinButton" id="end_ts_spin_btn">
+														<property name="adjustment">end_ts_adj</property>
+														<layout>
+															<property name="column">4</property>
+															<property name="row">1</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- Start TS now btn -->
+													<object class="GtkButton" id="start_ts_now_btn">
+														<property name="label">Now</property>
+														<layout>
+															<property name="column">5</property>
+															<property name="row">0</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- End TS now btn -->
+													<object class="GtkButton" id="end_ts_now_btn">
+														<property name="label">Now</property>
+														<layout>
+															<property name="column">5</property>
+															<property name="row">1</property>
+														</layout>
+													</object>
+												</child>
+											</object>
+										</child>
+										<child>
+											<!-- Total label -->
+											<object class="GtkLabel" id="total_label">
+												<property name="label">Total: 0.0</property>
+												<property name="halign">start</property>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<!-- Preview box -->
+									<object class="GtkBox">
+										<property name="orientation">vertical</property>
+										<property name="spacing">16</property>
+										<child>
+											<object class="GtkLabel">
+												<property name="label">Preview</property>
+												<property name="halign">start</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkGrid">
+												<property name="row-spacing">16</property>
+												<property name="column-spacing">8</property>
+												<child>
+													<!-- Start preview btn -->
+													<object class="GtkButton" id="preview_start_btn">
+														<property name="label">Start</property>
+														<layout>
+															<property name="column">0</property>
+															<property name="row">0</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- End preview btn -->
+													<object class="GtkButton" id="preview_end_btn">
+														<property name="label">End</property>
+														<layout>
+															<property name="column">0</property>
+															<property name="row">1</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- Start preview entry -->
+													<object class="GtkAdjustment" id="start_preview_adj">
+														<property name="lower">0</property>
+														<property name="upper">100</property>
+														<property name="step-increment">1</property>
+														<property name="page-increment">10</property>
+														<property name="value">5</property>
+													</object>
+													<object class="GtkSpinButton" id="preview_start_spin_btn">
+														<property name="adjustment">start_preview_adj</property>
+														<layout>
+															<property name="column">1</property>
+															<property name="row">0</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- End preview entry -->
+													<object class="GtkAdjustment" id="end_preview_adj">
+														<property name="lower">0</property>
+														<property name="upper">100</property>
+														<property name="step-increment">1</property>
+														<property name="page-increment">10</property>
+														<property name="value">5</property>
+													</object>
+													<object class="GtkSpinButton" id="preview_end_spin_btn">
+														<property name="adjustment">end_preview_adj</property>
+														<layout>
+															<property name="column">1</property>
+															<property name="row">1</property>
+														</layout>
+													</object>
+												</child>
+											</object>
+										</child>
+										<child>
+											<!-- Full preview button -->
+											<object class="GtkButton" id="preview_full_btn">
+												<property name="label">Full</property>
+												<property name="halign">start</property>
+												<property name="hexpand">false</property>
+											</object>
+										</child>
+										<child>
+											<!-- Render button -->
+											<object class="GtkButton" id="render_btn">
+												<property name="label">Render</property>
+												<property name="halign">start</property>
+												<property name="hexpand">false</property>
+											</object>
+										</child>
+									</object>
+								</child>
 							</object>
 						</child>
 					</object>
 				</child>
 				<child>
+					<!-- Bottom bar -->
 					<object class="GtkBox">
 						<property name="orientation">horizontal</property>
 						<property name="halign">end</property>
 						<property name="spacing">16</property>
-							<child>
-								<object class="GtkButton" id="reset_btn">
-									<property name="label">Reset</property>
-								</object>
-							</child>
-							<child>
-								<object class="GtkButton" id="start_stop_btn">
-									<property name="label">Start</property>
-								</object>
-							</child>
-							<child>
-								<object class="GtkLabel" id="timer_label">
-									<property name="label">0.0</property>
-									<property name="margin-end">28</property>
-								</object>
-							</child>
+						<child>
+							<object class="GtkLabel">
+								<property name="label">Timer</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkButton" id="reset_btn">
+								<property name="label">Reset</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkButton" id="start_stop_btn">
+								<property name="label">Start</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkLabel" id="timer_label">
+								<property name="label">0.0</property>
+								<property name="margin-end">28</property>
+							</object>
+						</child>
 					</object>
 				</child>
 			</object>
