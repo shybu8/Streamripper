@@ -14,12 +14,6 @@ struct _MyWindow {
   GtkMenuButton *settings_mbtn;
   // Center paned
   GtkListBox *sidebar_list_box;
-  GtkEntry *start_ts_entry;
-  GtkEntry *end_ts_entry;
-  GtkButton *start_ts_plus_btn;
-  GtkButton *end_ts_plus_btn;
-  GtkButton *start_ts_minus_btn;
-  GtkButton *end_ts_minus_btn;
   GtkSpinButton *start_ts_spin_btn;
   GtkSpinButton *end_ts_spin_btn;
   GtkButton *start_ts_now_btn;
@@ -58,7 +52,7 @@ static gboolean on_decimal_timer_timeout(void *data) {
   guint64 hrs = min / 60;
 
   char buf[64];
-  g_snprintf(buf, sizeof buf, "%02llu:%02llu:%02llu.%llu",
+  g_snprintf(buf, sizeof(buf), "%02llu:%02llu:%02llu.%llu",
              (unsigned long long)hrs, (unsigned long long)min,
              (unsigned long long)sec, (unsigned long long)dec);
   gtk_label_set_text(GTK_LABEL(win->timer_label), buf);
@@ -107,6 +101,29 @@ static void on_add_clip_clicked(GtkButton *btn, void *data) {
                       GTK_WIDGET(clip_row_new()));
 }
 
+static guint64 secs_on_timer(MyWindow *win) {
+  guint64 us = win->decimal_timer_timout_id != 0
+                   ? g_get_monotonic_time() - (guint64)win->timer_start_us
+                   : (guint64)win->timer_elapsed_us;
+  return us / 1000000;
+}
+
+static void on_start_ts_now_btn_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+  char buf[64];
+  g_snprintf(buf, sizeof(buf), "%llu", (unsigned long long)secs_on_timer(win));
+  gtk_editable_set_text(GTK_EDITABLE(win->start_ts_spin_btn), buf);
+}
+
+static void on_end_ts_now_btn_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+  char buf[64];
+  g_snprintf(buf, sizeof(buf), "%llu", (unsigned long long)secs_on_timer(win));
+  gtk_editable_set_text(GTK_EDITABLE(win->end_ts_spin_btn), buf);
+}
+
 static void my_window_class_init(MyWindowClass *klass) {
   GtkWidgetClass *wc = GTK_WIDGET_CLASS(klass);
   gtk_widget_class_set_template_from_resource(
@@ -117,12 +134,6 @@ static void my_window_class_init(MyWindowClass *klass) {
   gtk_widget_class_bind_template_child(wc, MyWindow, file_label);
   gtk_widget_class_bind_template_child(wc, MyWindow, settings_mbtn);
   gtk_widget_class_bind_template_child(wc, MyWindow, sidebar_list_box);
-  gtk_widget_class_bind_template_child(wc, MyWindow, start_ts_entry);
-  gtk_widget_class_bind_template_child(wc, MyWindow, end_ts_entry);
-  gtk_widget_class_bind_template_child(wc, MyWindow, start_ts_plus_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, end_ts_plus_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, start_ts_minus_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, end_ts_minus_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, start_ts_spin_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, end_ts_spin_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, start_ts_now_btn);
@@ -146,6 +157,10 @@ static void my_window_class_init(MyWindowClass *klass) {
                                           on_sidebar_row_selected);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
                                           on_add_clip_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_start_ts_now_btn_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_end_ts_now_btn_clicked);
 }
 
 static void my_window_init(MyWindow *self) {

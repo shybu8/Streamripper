@@ -101,80 +101,18 @@
 													</object>
 												</child>
 												<child>
-													<!-- Start TS entry -->
-													<object class="GtkEntry" id="start_ts_entry">
-														<property name="text">0.0</property>
-														<property name="placeholder-text">Start TS</property>
-														<layout>
-															<property name="column">1</property>
-															<property name="row">0</property>
-														</layout>
-													</object>
-												</child>
-												<child>
-													<!-- End TS entry -->
-													<object class="GtkEntry" id="end_ts_entry">
-														<property name="text">0.0</property>
-														<property name="placeholder-text">End TS</property>
-														<layout>
-															<property name="column">1</property>
-															<property name="row">1</property>
-														</layout>
-													</object>
-												</child>
-												<child>
-													<!-- Start TS plus btn -->
-													<object class="GtkButton" id="start_ts_plus_btn">
-														<property name="label">+</property>
-														<layout>
-															<property name="column">3</property>
-															<property name="row">0</property>
-														</layout>
-													</object>
-												</child>
-												<child>
-													<!-- End TS plus btn -->
-													<object class="GtkButton" id="end_ts_plus_btn">
-														<property name="label">+</property>
-														<layout>
-															<property name="column">3</property>
-															<property name="row">1</property>
-														</layout>
-													</object>
-												</child>
-												<child>
-													<!-- Start TS minus btn -->
-													<object class="GtkButton" id="start_ts_minus_btn">
-														<property name="label">-</property>
-														<layout>
-															<property name="column">2</property>
-															<property name="row">0</property>
-														</layout>
-													</object>
-												</child>
-												<child>
-													<!-- End TS minus btn -->
-													<object class="GtkButton" id="end_ts_minus_btn">
-														<property name="label">-</property>
-														<layout>
-															<property name="column">2</property>
-															<property name="row">1</property>
-														</layout>
-													</object>
-												</child>
-												<child>
 													<!-- Start TS SpinButton -->
 													<object class="GtkAdjustment" id="start_ts_adj">
 														<property name="lower">0</property>
-														<property name="upper">100</property>
+														<property name="upper">9007199254740992</property>
 														<property name="step-increment">1</property>
 														<property name="page-increment">10</property>
-														<property name="value">5</property>
+														<property name="value">1</property>
 													</object>
 													<object class="GtkSpinButton" id="start_ts_spin_btn">
 														<property name="adjustment">start_ts_adj</property>
 														<layout>
-															<property name="column">4</property>
+															<property name="column">1</property>
 															<property name="row">0</property>
 														</layout>
 													</object>
@@ -183,15 +121,15 @@
 													<!-- End TS SpinButton -->
 													<object class="GtkAdjustment" id="end_ts_adj">
 														<property name="lower">0</property>
-														<property name="upper">100</property>
+														<property name="upper">9007199254740992</property>
 														<property name="step-increment">1</property>
 														<property name="page-increment">10</property>
-														<property name="value">5</property>
+														<property name="value">1</property>
 													</object>
 													<object class="GtkSpinButton" id="end_ts_spin_btn">
 														<property name="adjustment">end_ts_adj</property>
 														<layout>
-															<property name="column">4</property>
+															<property name="column">1</property>
 															<property name="row">1</property>
 														</layout>
 													</object>
@@ -200,8 +138,9 @@
 													<!-- Start TS now btn -->
 													<object class="GtkButton" id="start_ts_now_btn">
 														<property name="label">Now</property>
+														<signal name="clicked" handler="on_start_ts_now_btn_clicked"/>
 														<layout>
-															<property name="column">5</property>
+															<property name="column">2</property>
 															<property name="row">0</property>
 														</layout>
 													</object>
@@ -210,8 +149,9 @@
 													<!-- End TS now btn -->
 													<object class="GtkButton" id="end_ts_now_btn">
 														<property name="label">Now</property>
+														<signal name="clicked" handler="on_end_ts_now_btn_clicked"/>
 														<layout>
-															<property name="column">5</property>
+															<property name="column">2</property>
 															<property name="row">1</property>
 														</layout>
 													</object>
