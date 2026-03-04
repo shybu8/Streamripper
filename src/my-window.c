@@ -35,9 +35,25 @@ struct _MyWindow {
   gint64 timer_elapsed_us;
   guint decimal_timer_timout_id;
   ClipRow *current_row;
+  GFile *source_file;
+  GPtrArray *clip_page_records;
 };
 
 G_DEFINE_FINAL_TYPE(MyWindow, my_window, GTK_TYPE_APPLICATION_WINDOW)
+
+typedef struct {
+  guint64 start_ts;
+  guint64 end_ts;
+  guint64 preview_start_s;
+  guint64 preview_end_s;
+} ClipPageRecord;
+
+static void init_clip_page_record(ClipPageRecord *cpr) {
+  cpr->start_ts = 0;
+  cpr->end_ts = 0;
+  cpr->preview_start_s = 5;
+  cpr->preview_end_s = 5;
+}
 
 static gboolean on_decimal_timer_timeout(void *data) {
   MyWindow *win = data;
@@ -88,17 +104,45 @@ static void on_reset_clicked(GtkButton *btn, void *data) {
 static void on_sidebar_row_selected(GtkListBox *box, GtkListBoxRow *row,
                                     MyWindow *win) {
   (void)box;
-  (void)row;
-  (void)win;
-  g_debug("Row selected");
+
+  if (win->current_row == CLIP_ROW(row))
+    return;
+
+  // Save current row
+  int idx = gtk_list_box_row_get_index(GTK_LIST_BOX_ROW(win->current_row));
+  ClipPageRecord *cpr = g_ptr_array_index(win->clip_page_records, idx);
+  cpr->start_ts = gtk_spin_button_get_value_as_int(win->start_ts_spin_btn);
+  cpr->end_ts = gtk_spin_button_get_value_as_int(win->end_ts_spin_btn);
+  cpr->preview_start_s =
+      gtk_spin_button_get_value_as_int(win->preview_start_spin_btn);
+  cpr->preview_end_s =
+      gtk_spin_button_get_value_as_int(win->preview_end_spin_btn);
+
+  // Load selected row
+  idx = gtk_list_box_row_get_index(row);
+  cpr = g_ptr_array_index(win->clip_page_records, idx);
+  gtk_spin_button_set_value(win->start_ts_spin_btn, (double)cpr->start_ts);
+  gtk_spin_button_set_value(win->end_ts_spin_btn, (double)cpr->end_ts);
+  gtk_spin_button_set_value(win->preview_start_spin_btn,
+                            (double)cpr->preview_start_s);
+  gtk_spin_button_set_value(win->preview_end_spin_btn,
+                            (double)cpr->preview_end_s);
+
+  win->current_row = CLIP_ROW(row);
+}
+
+static void add_clip(MyWindow *win) {
+  gtk_list_box_append(GTK_LIST_BOX(win->sidebar_list_box),
+                      GTK_WIDGET(clip_row_new()));
+  ClipPageRecord *cpr = g_new(ClipPageRecord, 1);
+  init_clip_page_record(cpr);
+  g_ptr_array_add(win->clip_page_records, cpr);
 }
 
 static void on_add_clip_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
-
-  gtk_list_box_append(GTK_LIST_BOX(win->sidebar_list_box),
-                      GTK_WIDGET(clip_row_new()));
+  add_clip(win);
 }
 
 static guint64 secs_on_timer(MyWindow *win) {
@@ -111,20 +155,89 @@ static guint64 secs_on_timer(MyWindow *win) {
 static void on_start_ts_now_btn_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
-  char buf[64];
-  g_snprintf(buf, sizeof(buf), "%llu", (unsigned long long)secs_on_timer(win));
-  gtk_editable_set_text(GTK_EDITABLE(win->start_ts_spin_btn), buf);
+  gtk_spin_button_set_value(win->start_ts_spin_btn, (double)secs_on_timer(win));
 }
 
 static void on_end_ts_now_btn_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
-  char buf[64];
-  g_snprintf(buf, sizeof(buf), "%llu", (unsigned long long)secs_on_timer(win));
-  gtk_editable_set_text(GTK_EDITABLE(win->end_ts_spin_btn), buf);
+  gtk_spin_button_set_value(win->end_ts_spin_btn, (double)secs_on_timer(win));
+}
+
+char *get_display_name(GFile *file) {
+  const char *unknown_filename = "Unknown filename";
+  GFileInfo *info =
+      g_file_query_info(file, G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME,
+                        G_FILE_QUERY_INFO_NONE, NULL, NULL);
+  if (!info)
+    return g_strdup(unknown_filename);
+
+  const char *dn = g_file_info_get_display_name(info);
+  char *res = dn ? g_strdup(dn) : g_strdup(unknown_filename);
+  g_object_unref(info);
+  return res; // Caller frees
+}
+
+static void on_source_open_finish(GObject *dlg, GAsyncResult *res, void *data) {
+  MyWindow *win = data;
+  GFile *file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(dlg), res, NULL);
+
+  if (!file) {
+    g_object_unref(win);
+    return;
+  }
+
+  if (win->source_file)
+    g_object_unref(win->source_file);
+  win->source_file = file;
+
+  char *dn = get_display_name(file);
+  gtk_label_set_text(GTK_LABEL(win->file_label), dn);
+  g_free(dn);
+
+  g_object_unref(win);
+}
+
+static void on_source_btn_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  GtkFileDialog *dlg = gtk_file_dialog_new();
+  gtk_file_dialog_set_title(dlg, "Open file");
+  gtk_file_dialog_set_modal(dlg, TRUE);
+
+  g_object_ref(data);
+  gtk_file_dialog_open(dlg, GTK_WINDOW(data), NULL, on_source_open_finish,
+                       data);
+
+  g_object_unref(dlg);
+}
+
+static void my_window_dispose(GObject *obj) {
+  MyWindow *self = MY_WINDOW(obj);
+
+  if (self->decimal_timer_timout_id != 0) {
+    g_source_remove(self->decimal_timer_timout_id);
+    self->decimal_timer_timout_id = 0;
+  }
+
+  // Open cancelable
+
+  if (self->sidebar_list_box)
+    g_signal_handlers_disconnect_by_data(self->sidebar_list_box, self);
+
+  self->current_row = NULL;
+
+  g_clear_object(&self->source_file);
+  g_clear_pointer(&self->clip_page_records, g_ptr_array_unref);
+
+  gtk_widget_dispose_template(GTK_WIDGET(self), MY_TYPE_WINDOW);
+
+  G_OBJECT_CLASS(my_window_parent_class)->dispose(obj);
 }
 
 static void my_window_class_init(MyWindowClass *klass) {
+  GObjectClass *oc = G_OBJECT_CLASS(klass);
+  oc->dispose = my_window_dispose;
+
   GtkWidgetClass *wc = GTK_WIDGET_CLASS(klass);
   gtk_widget_class_set_template_from_resource(
       wc, "/org/shybu8/streamripper/my-window.ui");
@@ -161,14 +274,16 @@ static void my_window_class_init(MyWindowClass *klass) {
                                           on_start_ts_now_btn_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
                                           on_end_ts_now_btn_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_source_btn_clicked);
 }
 
 static void my_window_init(MyWindow *self) {
   gtk_widget_init_template(GTK_WIDGET(self));
-  ClipRow *initial_row = clip_row_new();
-  gtk_list_box_append(GTK_LIST_BOX(self->sidebar_list_box),
-                      GTK_WIDGET(initial_row));
-  self->current_row = initial_row;
+  self->clip_page_records = g_ptr_array_new_with_free_func(g_free);
+  add_clip(self);
+  self->current_row =
+      CLIP_ROW(gtk_list_box_get_row_at_index(self->sidebar_list_box, 0));
 }
 
 MyWindow *my_window_new(GtkApplication *app) {

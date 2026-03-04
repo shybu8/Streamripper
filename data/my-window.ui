@@ -23,6 +23,7 @@
 								<child>
 									<object class="GtkButton" id="source_btn">
 										<property name="label">Source</property>
+										<signal name="clicked" handler="on_source_btn_clicked"/>
 									</object>
 								</child>
 								<child>
@@ -93,7 +94,7 @@
 												<child>
 													<!-- End TS label -->
 													<object class="GtkLabel">
-														<property name="label">Start ts:</property>
+														<property name="label">End ts:</property>
 														<layout>
 															<property name="column">0</property>
 															<property name="row">1</property>
@@ -107,7 +108,7 @@
 														<property name="upper">9007199254740992</property>
 														<property name="step-increment">1</property>
 														<property name="page-increment">10</property>
-														<property name="value">1</property>
+														<property name="value">0</property>
 													</object>
 													<object class="GtkSpinButton" id="start_ts_spin_btn">
 														<property name="adjustment">start_ts_adj</property>
@@ -124,7 +125,7 @@
 														<property name="upper">9007199254740992</property>
 														<property name="step-increment">1</property>
 														<property name="page-increment">10</property>
-														<property name="value">1</property>
+														<property name="value">0</property>
 													</object>
 													<object class="GtkSpinButton" id="end_ts_spin_btn">
 														<property name="adjustment">end_ts_adj</property>
