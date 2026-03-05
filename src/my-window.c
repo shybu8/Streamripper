@@ -55,6 +55,30 @@ static void init_clip_page_record(ClipPageRecord *cpr) {
   cpr->preview_end_s = 5;
 }
 
+static void recalc_total(MyWindow *win) {
+  gint64 start = gtk_spin_button_get_value_as_int(win->start_ts_spin_btn);
+  gint64 end = gtk_spin_button_get_value_as_int(win->end_ts_spin_btn);
+
+  char buf[64];
+  guint64 hours = 0, mins = 0, secs = 0;
+  gint64 secs_total = end - start;
+  if (secs_total > 0) {
+    secs = secs_total % 60;
+    guint64 mins_total = secs_total / 60;
+    mins = mins_total % 60;
+    hours = mins_total / 60;
+  }
+  g_snprintf(buf, sizeof(buf), "Total: %01llu:%01llu:%01llu",
+             (unsigned long long)hours, (unsigned long long)mins,
+             (unsigned long long)secs);
+  gtk_label_set_text(GTK_LABEL(win->total_label), buf);
+}
+
+static void on_spin_button_change(GtkSpinButton *btn, void *data) {
+  (void)btn;
+  recalc_total(data);
+}
+
 static gboolean on_decimal_timer_timeout(void *data) {
   MyWindow *win = data;
   gint64 now_us = g_get_monotonic_time();
@@ -62,9 +86,11 @@ static gboolean on_decimal_timer_timeout(void *data) {
 
   // tenths of a second
   guint64 t = (guint64)(us / 100000); // 0.1s = 100,000us
-  guint64 sec = t / 10;
+  guint64 total_sec = t / 10;
   guint64 dec = t % 10;
-  guint64 min = sec / 60;
+  guint64 sec = total_sec % 60;
+  guint64 total_min = total_sec / 60;
+  guint64 min = total_min % 60;
   guint64 hrs = min / 60;
 
   char buf[64];
@@ -284,6 +310,10 @@ static void my_window_init(MyWindow *self) {
   add_clip(self);
   self->current_row =
       CLIP_ROW(gtk_list_box_get_row_at_index(self->sidebar_list_box, 0));
+  g_signal_connect(self->start_ts_spin_btn, "value-changed",
+                   G_CALLBACK(on_spin_button_change), self);
+  g_signal_connect(self->end_ts_spin_btn, "value-changed",
+                   G_CALLBACK(on_spin_button_change), self);
 }
 
 MyWindow *my_window_new(GtkApplication *app) {
