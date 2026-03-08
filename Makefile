@@ -10,14 +10,15 @@ RES_C = src/resources.c
 RES_H = src/resources.h
 
 SRC = src/main.c src/clip-row.c src/my-window.c $(RES_C) $(RES_H)
+CFLAGS = -g -Wall -Wextra -Wpedantic $(shell pkg-config --cflags gtk4)
+LDFLAGS = $(shell pkg-config --libs gtk4)
 
 all: $(SRC)
 	$(CC) \
-		$$(pkg-config --cflags --libs gtk4) \
-		-Wall -Wextra -Wpedantic \
-		-g \
 		-o $(APP) \
-		$(SRC)
+		$(SRC) \
+		${CFLAGS} \
+		${LDFLAGS}
 
 $(RES_C): $(RES_XML) $(UI_FILES)
 	glib-compile-resources $(RES_XML) \
