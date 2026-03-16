@@ -147,12 +147,34 @@
 													</object>
 												</child>
 												<child>
+													<!-- Start TS preview now btn -->
+													<object class="GtkButton" id="start_ts_preview_now_btn">
+														<property name="label">Preview now</property>
+														<signal name="clicked" handler="on_start_ts_preview_now_btn_clicked"/>
+														<layout>
+															<property name="column">3</property>
+															<property name="row">0</property>
+														</layout>
+													</object>
+												</child>
+												<child>
 													<!-- End TS now btn -->
 													<object class="GtkButton" id="end_ts_now_btn">
 														<property name="label">Now</property>
 														<signal name="clicked" handler="on_end_ts_now_btn_clicked"/>
 														<layout>
 															<property name="column">2</property>
+															<property name="row">1</property>
+														</layout>
+													</object>
+												</child>
+												<child>
+													<!-- End TS preview now btn -->
+													<object class="GtkButton" id="end_ts_preview_now_btn">
+														<property name="label">Preview now</property>
+														<signal name="clicked" handler="on_end_ts_preview_now_btn_clicked"/>
+														<layout>
+															<property name="column">3</property>
 															<property name="row">1</property>
 														</layout>
 													</object>
