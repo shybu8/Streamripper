@@ -3,6 +3,21 @@
 #include "glib.h"
 #include "gtk/gtk.h"
 
+#define MEDIA_TICK_MILLISEC 100
+
+typedef enum {
+  MEDIA_STATE_IDLE = 0,
+  MEDIA_STATE_WAIT_PREPARED,
+  MEDIA_STATE_WAIT_SEEK,
+  MEDIA_STATE_PLAYING
+} MediaState;
+
+typedef enum {
+  RANGE_KIND_FULL = 0,
+  RANGE_KIND_START,
+  RANGE_KIND_END
+} RangeKind;
+
 struct _MyWindow {
   GtkApplicationWindow parent_instance;
   // Upper bar
@@ -25,6 +40,7 @@ struct _MyWindow {
   GtkSpinButton *preview_end_spin_btn;
   GtkSpinButton *preview_full_btn;
   GtkSpinButton *render_btn;
+  GtkVideo *video;
   // Bottom bar
   GtkButton *reset_btn;
   GtkButton *start_stop_btn;
@@ -37,6 +53,10 @@ struct _MyWindow {
   ClipRow *current_row;
   GFile *source_file;
   GPtrArray *clip_page_records;
+  MediaState media_state;
+  guint media_tick_id;
+  GtkMediaStream *media_stream;
+  RangeKind range_kind;
 };
 
 G_DEFINE_FINAL_TYPE(MyWindow, my_window, GTK_TYPE_APPLICATION_WINDOW)
@@ -72,6 +92,110 @@ static void recalc_total(MyWindow *win) {
              (unsigned long long)hours, (unsigned long long)mins,
              (unsigned long long)secs);
   gtk_label_set_text(GTK_LABEL(win->total_label), buf);
+}
+
+static void media_load_stream(MyWindow *win) {
+  if (win->media_stream)
+    g_object_unref(win->media_stream);
+  gtk_video_set_autoplay(win->video, FALSE);
+  gtk_video_set_loop(win->video, FALSE);
+  win->media_stream = gtk_media_file_new_for_file(win->source_file);
+  gtk_video_set_media_stream(win->video, GTK_MEDIA_STREAM(win->media_stream));
+}
+
+static gboolean media_tick(void *data) {
+  MyWindow *win = data;
+  switch (win->media_state) {
+  case MEDIA_STATE_WAIT_PREPARED:
+    if (!gtk_media_stream_is_prepared(win->media_stream))
+      return G_SOURCE_CONTINUE;
+    gtk_media_stream_pause(win->media_stream);
+    gint64 start_ts_u;
+    switch (win->range_kind) {
+    case RANGE_KIND_FULL:
+    case RANGE_KIND_START:
+      start_ts_u =
+          gtk_spin_button_get_value_as_int(win->start_ts_spin_btn) * 1000000;
+      break;
+    case RANGE_KIND_END:
+      start_ts_u =
+          MAX((gtk_spin_button_get_value_as_int(win->end_ts_spin_btn) -
+               gtk_spin_button_get_value_as_int(win->preview_end_spin_btn)),
+              gtk_spin_button_get_value_as_int(win->start_ts_spin_btn)) *
+          1000000;
+      break;
+    }
+    gtk_media_stream_seek(win->media_stream, start_ts_u);
+    win->media_state = MEDIA_STATE_WAIT_SEEK;
+    return G_SOURCE_CONTINUE;
+  case MEDIA_STATE_WAIT_SEEK:
+    if (!gtk_media_stream_is_seeking(win->media_stream)) {
+      gtk_media_stream_play(win->media_stream);
+      win->media_state = MEDIA_STATE_PLAYING;
+    }
+    return G_SOURCE_CONTINUE;
+  case MEDIA_STATE_PLAYING: {
+    gint64 ts = gtk_media_stream_get_timestamp(win->media_stream);
+    gint64 stop_ts;
+    switch (win->range_kind) {
+    case RANGE_KIND_FULL:
+    case RANGE_KIND_END:
+      stop_ts =
+          gtk_spin_button_get_value_as_int(win->end_ts_spin_btn) * 1000000;
+      break;
+    case RANGE_KIND_START:
+      stop_ts =
+          MIN((gtk_spin_button_get_value_as_int(win->start_ts_spin_btn) +
+               gtk_spin_button_get_value_as_int(win->preview_start_spin_btn)),
+              gtk_spin_button_get_value_as_int(win->end_ts_spin_btn)) *
+          1000000;
+    }
+    if (gtk_media_stream_get_ended(win->media_stream) || ts >= stop_ts) {
+      gtk_media_stream_pause(win->media_stream);
+      win->media_tick_id = 0;
+      win->media_state = MEDIA_STATE_IDLE;
+      return G_SOURCE_REMOVE;
+    }
+    return G_SOURCE_CONTINUE;
+  }
+  case MEDIA_STATE_IDLE:
+  default:
+    win->media_tick_id = 0;
+    return G_SOURCE_REMOVE;
+  }
+}
+
+static void media_play_range(MyWindow *win, RangeKind range_kind) {
+  media_load_stream(win);
+  win->range_kind = range_kind;
+  win->media_state = MEDIA_STATE_WAIT_PREPARED;
+  win->media_tick_id = g_timeout_add(MEDIA_TICK_MILLISEC, media_tick, win);
+}
+
+static bool is_clip_tss_valid(MyWindow *win) {
+  return gtk_spin_button_get_value_as_int(win->start_ts_spin_btn) <
+         gtk_spin_button_get_value_as_int(win->end_ts_spin_btn);
+}
+
+static void on_preview_start_btn_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+  if (is_clip_tss_valid(win))
+    media_play_range(win, RANGE_KIND_START);
+}
+
+static void on_preview_end_btn_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+  if (is_clip_tss_valid(win))
+    media_play_range(win, RANGE_KIND_END);
+}
+
+static void on_preview_full_btn_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+  if (is_clip_tss_valid(win))
+    media_play_range(win, RANGE_KIND_FULL);
 }
 
 static void on_spin_button_change(GtkSpinButton *btn, void *data) {
@@ -245,10 +369,11 @@ static void my_window_dispose(GObject *obj) {
     self->decimal_timer_timout_id = 0;
   }
 
-  // Open cancelable
-
   if (self->sidebar_list_box)
     g_signal_handlers_disconnect_by_data(self->sidebar_list_box, self);
+
+  if (self->media_stream)
+    g_object_unref(self->media_stream);
 
   self->current_row = NULL;
 
@@ -284,6 +409,7 @@ static void my_window_class_init(MyWindowClass *klass) {
   gtk_widget_class_bind_template_child(wc, MyWindow, preview_end_spin_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, preview_full_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, render_btn);
+  gtk_widget_class_bind_template_child(wc, MyWindow, video);
   gtk_widget_class_bind_template_child(wc, MyWindow, reset_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, start_stop_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, timer_label);
@@ -302,6 +428,12 @@ static void my_window_class_init(MyWindowClass *klass) {
                                           on_end_ts_now_btn_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
                                           on_source_btn_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_preview_start_btn_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_preview_end_btn_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_preview_full_btn_clicked);
 }
 
 static void my_window_init(MyWindow *self) {

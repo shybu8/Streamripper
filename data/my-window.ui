@@ -171,88 +171,101 @@
 								<child>
 									<!-- Preview box -->
 									<object class="GtkBox">
-										<property name="orientation">vertical</property>
+										<property name="orientation">horizontal</property>
 										<property name="spacing">16</property>
 										<child>
-											<object class="GtkLabel">
-												<property name="label">Preview</property>
-												<property name="halign">start</property>
+											<object class="GtkBox">
+												<property name="orientation">vertical</property>
+												<property name="spacing">16</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="label">Preview</property>
+														<property name="halign">start</property>
+													</object>
+												</child>
+												<child>
+													<object class="GtkGrid">
+														<property name="row-spacing">16</property>
+														<property name="column-spacing">8</property>
+														<child>
+															<!-- Start preview btn -->
+															<object class="GtkButton" id="preview_start_btn">
+																<property name="label">Start</property>
+																<signal name="clicked" handler="on_preview_start_btn_clicked"/>
+																<layout>
+																	<property name="column">0</property>
+																	<property name="row">0</property>
+																</layout>
+															</object>
+														</child>
+														<child>
+															<!-- End preview btn -->
+															<object class="GtkButton" id="preview_end_btn">
+																<property name="label">End</property>
+																<signal name="clicked" handler="on_preview_end_btn_clicked"/>
+																<layout>
+																	<property name="column">0</property>
+																	<property name="row">1</property>
+																</layout>
+															</object>
+														</child>
+														<child>
+															<!-- Start preview entry -->
+															<object class="GtkAdjustment" id="start_preview_adj">
+																<property name="lower">0</property>
+																<property name="upper">100</property>
+																<property name="step-increment">1</property>
+																<property name="page-increment">10</property>
+																<property name="value">5</property>
+															</object>
+															<object class="GtkSpinButton" id="preview_start_spin_btn">
+																<property name="adjustment">start_preview_adj</property>
+																<layout>
+																	<property name="column">1</property>
+																	<property name="row">0</property>
+																</layout>
+															</object>
+														</child>
+														<child>
+															<!-- End preview entry -->
+															<object class="GtkAdjustment" id="end_preview_adj">
+																<property name="lower">0</property>
+																<property name="upper">100</property>
+																<property name="step-increment">1</property>
+																<property name="page-increment">10</property>
+																<property name="value">5</property>
+															</object>
+															<object class="GtkSpinButton" id="preview_end_spin_btn">
+																<property name="adjustment">end_preview_adj</property>
+																<layout>
+																	<property name="column">1</property>
+																	<property name="row">1</property>
+																</layout>
+															</object>
+														</child>
+													</object>
+												</child>
+												<child>
+													<!-- Full preview button -->
+													<object class="GtkButton" id="preview_full_btn">
+														<property name="label">Full</property>
+														<property name="halign">start</property>
+														<property name="hexpand">false</property>
+														<signal name="clicked" handler="on_preview_full_btn_clicked"/>
+													</object>
+												</child>
+												<child>
+													<!-- Render button -->
+													<object class="GtkButton" id="render_btn">
+														<property name="label">Render</property>
+														<property name="halign">start</property>
+														<property name="hexpand">false</property>
+													</object>
+												</child>
 											</object>
 										</child>
 										<child>
-											<object class="GtkGrid">
-												<property name="row-spacing">16</property>
-												<property name="column-spacing">8</property>
-												<child>
-													<!-- Start preview btn -->
-													<object class="GtkButton" id="preview_start_btn">
-														<property name="label">Start</property>
-														<layout>
-															<property name="column">0</property>
-															<property name="row">0</property>
-														</layout>
-													</object>
-												</child>
-												<child>
-													<!-- End preview btn -->
-													<object class="GtkButton" id="preview_end_btn">
-														<property name="label">End</property>
-														<layout>
-															<property name="column">0</property>
-															<property name="row">1</property>
-														</layout>
-													</object>
-												</child>
-												<child>
-													<!-- Start preview entry -->
-													<object class="GtkAdjustment" id="start_preview_adj">
-														<property name="lower">0</property>
-														<property name="upper">100</property>
-														<property name="step-increment">1</property>
-														<property name="page-increment">10</property>
-														<property name="value">5</property>
-													</object>
-													<object class="GtkSpinButton" id="preview_start_spin_btn">
-														<property name="adjustment">start_preview_adj</property>
-														<layout>
-															<property name="column">1</property>
-															<property name="row">0</property>
-														</layout>
-													</object>
-												</child>
-												<child>
-													<!-- End preview entry -->
-													<object class="GtkAdjustment" id="end_preview_adj">
-														<property name="lower">0</property>
-														<property name="upper">100</property>
-														<property name="step-increment">1</property>
-														<property name="page-increment">10</property>
-														<property name="value">5</property>
-													</object>
-													<object class="GtkSpinButton" id="preview_end_spin_btn">
-														<property name="adjustment">end_preview_adj</property>
-														<layout>
-															<property name="column">1</property>
-															<property name="row">1</property>
-														</layout>
-													</object>
-												</child>
-											</object>
-										</child>
-										<child>
-											<!-- Full preview button -->
-											<object class="GtkButton" id="preview_full_btn">
-												<property name="label">Full</property>
-												<property name="halign">start</property>
-												<property name="hexpand">false</property>
-											</object>
-										</child>
-										<child>
-											<!-- Render button -->
-											<object class="GtkButton" id="render_btn">
-												<property name="label">Render</property>
-												<property name="halign">start</property>
-												<property name="hexpand">false</property>
+											<object class="GtkVideo" id="video">
 											</object>
 										</child>
 									</object>
