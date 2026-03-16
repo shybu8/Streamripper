@@ -23,7 +23,7 @@
 								<child>
 									<object class="GtkButton" id="source_btn">
 										<property name="label">Source</property>
-										<signal name="clicked" handler="on_source_btn_clicked"/>
+										<signal name="clicked" handler="on_source_clicked"/>
 									</object>
 								</child>
 								<child>
@@ -35,7 +35,7 @@
 								<child>
 									<object class="GtkButton" id="output_btn">
 										<property name="label">Output</property>
-										<signal name="clicked" handler="on_output_btn_clicked"/>
+										<signal name="clicked" handler="on_output_clicked"/>
 									</object>
 								</child>
 							</object>
@@ -140,7 +140,7 @@
 													<!-- Start TS now btn -->
 													<object class="GtkButton" id="start_ts_now_btn">
 														<property name="label">Now</property>
-														<signal name="clicked" handler="on_start_ts_now_btn_clicked"/>
+														<signal name="clicked" handler="on_start_ts_now_clicked"/>
 														<layout>
 															<property name="column">2</property>
 															<property name="row">0</property>
@@ -151,7 +151,7 @@
 													<!-- Start TS preview now btn -->
 													<object class="GtkButton" id="start_ts_preview_now_btn">
 														<property name="label">Preview now</property>
-														<signal name="clicked" handler="on_start_ts_preview_now_btn_clicked"/>
+														<signal name="clicked" handler="on_start_ts_preview_now_clicked"/>
 														<layout>
 															<property name="column">3</property>
 															<property name="row">0</property>
@@ -162,7 +162,7 @@
 													<!-- End TS now btn -->
 													<object class="GtkButton" id="end_ts_now_btn">
 														<property name="label">Now</property>
-														<signal name="clicked" handler="on_end_ts_now_btn_clicked"/>
+														<signal name="clicked" handler="on_end_ts_now_clicked"/>
 														<layout>
 															<property name="column">2</property>
 															<property name="row">1</property>
@@ -173,7 +173,7 @@
 													<!-- End TS preview now btn -->
 													<object class="GtkButton" id="end_ts_preview_now_btn">
 														<property name="label">Preview now</property>
-														<signal name="clicked" handler="on_end_ts_preview_now_btn_clicked"/>
+														<signal name="clicked" handler="on_end_ts_preview_now_clicked"/>
 														<layout>
 															<property name="column">3</property>
 															<property name="row">1</property>
@@ -214,7 +214,7 @@
 															<!-- Start preview btn -->
 															<object class="GtkButton" id="preview_start_btn">
 																<property name="label">Start</property>
-																<signal name="clicked" handler="on_preview_start_btn_clicked"/>
+																<signal name="clicked" handler="on_preview_start_clicked"/>
 																<layout>
 																	<property name="column">0</property>
 																	<property name="row">0</property>
@@ -225,7 +225,7 @@
 															<!-- End preview btn -->
 															<object class="GtkButton" id="preview_end_btn">
 																<property name="label">End</property>
-																<signal name="clicked" handler="on_preview_end_btn_clicked"/>
+																<signal name="clicked" handler="on_preview_end_clicked"/>
 																<layout>
 																	<property name="column">0</property>
 																	<property name="row">1</property>
@@ -274,7 +274,7 @@
 														<property name="label">Full</property>
 														<property name="halign">start</property>
 														<property name="hexpand">false</property>
-														<signal name="clicked" handler="on_preview_full_btn_clicked"/>
+														<signal name="clicked" handler="on_preview_full_clicked"/>
 													</object>
 												</child>
 												<child>

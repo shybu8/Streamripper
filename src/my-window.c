@@ -21,25 +21,25 @@ typedef enum {
 struct _MyWindow {
   GtkApplicationWindow parent_instance;
   // Upper bar
-  GtkLabel *label;
-  GtkButton *source_btn;
-  GtkButton *add_clip_btn;
-  GtkButton *output_btn;
+  // GtkLabel *label;
+  // GtkButton *source_btn;
+  // GtkButton *add_clip_btn;
+  // GtkButton *output_btn;
   GtkLabel *file_label;
-  GtkMenuButton *settings_mbtn;
+  // GtkMenuButton *settings_mbtn;
   // Center paned
   GtkListBox *sidebar_list_box;
   GtkSpinButton *start_ts_spin_btn;
   GtkSpinButton *end_ts_spin_btn;
-  GtkButton *start_ts_now_btn;
-  GtkButton *end_ts_now_btn;
+  // GtkButton *start_ts_now_btn;
+  // GtkButton *end_ts_now_btn;
   GtkButton *total_label;
-  GtkButton *preview_start_btn;
-  GtkButton *preview_end_btn;
+  // GtkButton *preview_start_btn;
+  // GtkButton *preview_end_btn;
   GtkSpinButton *preview_start_spin_btn;
   GtkSpinButton *preview_end_spin_btn;
-  GtkSpinButton *preview_full_btn;
-  GtkSpinButton *render_btn;
+  // GtkSpinButton *preview_full_btn;
+  // GtkSpinButton *render_btn;
   GtkVideo *video;
   // Bottom bar
   GtkButton *reset_btn;
@@ -178,21 +178,21 @@ static bool is_clip_tss_valid(MyWindow *win) {
          gtk_spin_button_get_value_as_int(win->end_ts_spin_btn);
 }
 
-static void on_preview_start_btn_clicked(GtkButton *btn, void *data) {
+static void on_preview_start_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
   if (is_clip_tss_valid(win))
     media_play_range(win, RANGE_KIND_START);
 }
 
-static void on_preview_end_btn_clicked(GtkButton *btn, void *data) {
+static void on_preview_end_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
   if (is_clip_tss_valid(win))
     media_play_range(win, RANGE_KIND_END);
 }
 
-static void on_preview_full_btn_clicked(GtkButton *btn, void *data) {
+static void on_preview_full_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
   if (is_clip_tss_valid(win))
@@ -204,7 +204,7 @@ static void on_spin_button_change(GtkSpinButton *btn, void *data) {
   recalc_total(data);
 }
 
-static void on_start_ts_preview_now_btn_clicked(GtkButton *btn, void *data) {
+static void on_start_ts_preview_now_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
   if (!win->media_stream)
@@ -213,7 +213,7 @@ static void on_start_ts_preview_now_btn_clicked(GtkButton *btn, void *data) {
   gtk_spin_button_set_value(win->start_ts_spin_btn, (double)(ts / 1000000));
 }
 
-static void on_end_ts_preview_now_btn_clicked(GtkButton *btn, void *data) {
+static void on_end_ts_preview_now_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
   if (!win->media_stream)
@@ -321,13 +321,13 @@ static guint64 secs_on_timer(MyWindow *win) {
   return us / 1000000;
 }
 
-static void on_start_ts_now_btn_clicked(GtkButton *btn, void *data) {
+static void on_start_ts_now_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
   gtk_spin_button_set_value(win->start_ts_spin_btn, (double)secs_on_timer(win));
 }
 
-static void on_end_ts_now_btn_clicked(GtkButton *btn, void *data) {
+static void on_end_ts_now_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
   gtk_spin_button_set_value(win->end_ts_spin_btn, (double)secs_on_timer(win));
@@ -367,7 +367,7 @@ static void on_source_open_finish(GObject *dlg, GAsyncResult *res, void *data) {
   g_object_unref(win);
 }
 
-static void on_source_btn_clicked(GtkButton *btn, void *data) {
+static void on_source_clicked(GtkButton *btn, void *data) {
   (void)btn;
   GtkFileDialog *dlg = gtk_file_dialog_new();
   gtk_file_dialog_set_title(dlg, "Open file");
@@ -397,7 +397,7 @@ static void on_output_select_folder_finish(GObject *dlg, GAsyncResult *res,
   g_object_unref(win);
 }
 
-static void on_output_btn_clicked(GtkButton *btn, void *data) {
+static void on_output_clicked(GtkButton *btn, void *data) {
   (void)btn;
   GtkFileDialog *dlg = gtk_file_dialog_new();
   gtk_file_dialog_set_title(dlg, "Choose output directory");
@@ -440,23 +440,23 @@ static void my_window_class_init(MyWindowClass *klass) {
   GtkWidgetClass *wc = GTK_WIDGET_CLASS(klass);
   gtk_widget_class_set_template_from_resource(
       wc, "/org/shybu8/streamripper/my-window.ui");
-  gtk_widget_class_bind_template_child(wc, MyWindow, source_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, add_clip_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, output_btn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, source_btn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, add_clip_btn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, output_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, file_label);
-  gtk_widget_class_bind_template_child(wc, MyWindow, settings_mbtn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, settings_mbtn);
   gtk_widget_class_bind_template_child(wc, MyWindow, sidebar_list_box);
   gtk_widget_class_bind_template_child(wc, MyWindow, start_ts_spin_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, end_ts_spin_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, start_ts_now_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, end_ts_now_btn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, start_ts_now_btn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, end_ts_now_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, total_label);
-  gtk_widget_class_bind_template_child(wc, MyWindow, preview_start_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, preview_end_btn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, preview_start_btn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, preview_end_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, preview_start_spin_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, preview_end_spin_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, preview_full_btn);
-  gtk_widget_class_bind_template_child(wc, MyWindow, render_btn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, preview_full_btn);
+  // gtk_widget_class_bind_template_child(wc, MyWindow, render_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, video);
   gtk_widget_class_bind_template_child(wc, MyWindow, reset_btn);
   gtk_widget_class_bind_template_child(wc, MyWindow, start_stop_btn);
@@ -471,23 +471,23 @@ static void my_window_class_init(MyWindowClass *klass) {
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
                                           on_add_clip_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
-                                          on_start_ts_now_btn_clicked);
+                                          on_start_ts_now_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
-                                          on_end_ts_now_btn_clicked);
+                                          on_end_ts_now_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
-                                          on_source_btn_clicked);
+                                          on_source_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
-                                          on_output_btn_clicked);
+                                          on_output_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
-                                          on_preview_start_btn_clicked);
+                                          on_preview_start_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
-                                          on_preview_end_btn_clicked);
+                                          on_preview_end_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
-                                          on_preview_full_btn_clicked);
+                                          on_preview_full_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
-                                          on_start_ts_preview_now_btn_clicked);
+                                          on_start_ts_preview_now_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
-                                          on_end_ts_preview_now_btn_clicked);
+                                          on_end_ts_preview_now_clicked);
 }
 
 static void my_window_init(MyWindow *self) {
