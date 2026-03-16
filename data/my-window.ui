@@ -35,6 +35,7 @@
 								<child>
 									<object class="GtkButton" id="output_btn">
 										<property name="label">Output</property>
+										<signal name="clicked" handler="on_output_btn_clicked"/>
 									</object>
 								</child>
 							</object>

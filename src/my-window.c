@@ -52,6 +52,7 @@ struct _MyWindow {
   guint decimal_timer_timout_id;
   ClipRow *current_row;
   GFile *source_file;
+  GFile *output_dir;
   GPtrArray *clip_page_records;
   MediaState media_state;
   guint media_tick_id;
@@ -379,6 +380,35 @@ static void on_source_btn_clicked(GtkButton *btn, void *data) {
   g_object_unref(dlg);
 }
 
+static void on_output_select_folder_finish(GObject *dlg, GAsyncResult *res,
+                                           void *data) {
+  MyWindow *win = data;
+  GFile *dir =
+      gtk_file_dialog_select_folder_finish(GTK_FILE_DIALOG(dlg), res, NULL);
+
+  if (!dir) {
+    g_object_unref(win);
+    return;
+  }
+
+  if (win->output_dir)
+    g_object_unref(win->output_dir);
+  win->output_dir = dir;
+  g_object_unref(win);
+}
+
+static void on_output_btn_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  GtkFileDialog *dlg = gtk_file_dialog_new();
+  gtk_file_dialog_set_title(dlg, "Choose output directory");
+  gtk_file_dialog_set_modal(dlg, TRUE);
+
+  g_object_ref(data);
+  gtk_file_dialog_select_folder(dlg, GTK_WINDOW(data), NULL,
+                                on_output_select_folder_finish, data);
+  g_object_unref(dlg);
+}
+
 static void my_window_dispose(GObject *obj) {
   MyWindow *self = MY_WINDOW(obj);
 
@@ -446,6 +476,8 @@ static void my_window_class_init(MyWindowClass *klass) {
                                           on_end_ts_now_btn_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
                                           on_source_btn_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_output_btn_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
                                           on_preview_start_btn_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
