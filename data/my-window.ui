@@ -283,6 +283,7 @@
 														<property name="label">Render</property>
 														<property name="halign">start</property>
 														<property name="hexpand">false</property>
+														<signal name="clicked" handler="on_render_clicked"/>
 													</object>
 												</child>
 											</object>

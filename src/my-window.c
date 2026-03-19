@@ -1,5 +1,7 @@
 #include "my-window.h"
 #include "clip-row.h"
+#include "ffmpeg.h"
+#include "gio/gio.h"
 #include "glib.h"
 #include "gtk/gtk.h"
 
@@ -220,6 +222,17 @@ static void on_end_ts_preview_now_clicked(GtkButton *btn, void *data) {
     return;
   gint64 ts = gtk_media_stream_get_timestamp(win->media_stream);
   gtk_spin_button_set_value(win->end_ts_spin_btn, (double)(ts / 1000000));
+}
+
+static void on_render_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+  const char *output_name = clip_row_get_label_text(win->current_row);
+  guint64 start_ts = gtk_spin_button_get_value_as_int(win->start_ts_spin_btn);
+  guint64 end_ts = gtk_spin_button_get_value_as_int(win->end_ts_spin_btn);
+  if (win->source_file)
+    ffmpeg_render(win->source_file, start_ts, end_ts, win->output_dir,
+                  output_name, win);
 }
 
 static gboolean on_decimal_timer_timeout(void *data) {
@@ -488,6 +501,8 @@ static void my_window_class_init(MyWindowClass *klass) {
                                           on_start_ts_preview_now_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
                                           on_end_ts_preview_now_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_render_clicked);
 }
 
 static void my_window_init(MyWindow *self) {
