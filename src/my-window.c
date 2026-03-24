@@ -4,6 +4,7 @@
 #include "gio/gio.h"
 #include "glib.h"
 #include "gtk/gtk.h"
+#include "save_load.h"
 
 #define MEDIA_TICK_MILLISEC 100
 
@@ -64,18 +65,25 @@ struct _MyWindow {
 
 G_DEFINE_FINAL_TYPE(MyWindow, my_window, GTK_TYPE_APPLICATION_WINDOW)
 
-typedef struct {
-  guint64 start_ts;
-  guint64 end_ts;
-  guint64 preview_start_s;
-  guint64 preview_end_s;
-} ClipPageRecord;
-
 static void init_clip_page_record(ClipPageRecord *cpr) {
   cpr->start_ts = 0;
   cpr->end_ts = 0;
-  cpr->preview_start_s = 5;
-  cpr->preview_end_s = 5;
+}
+
+static void save_clip_page_record(MyWindow *win, ClipPageRecord *cpr) {
+  cpr->start_ts = gtk_spin_button_get_value_as_int(win->start_ts_spin_btn);
+  cpr->end_ts = gtk_spin_button_get_value_as_int(win->end_ts_spin_btn);
+}
+
+static void save_current_clip_page_record(MyWindow *win) {
+  int idx = gtk_list_box_row_get_index(GTK_LIST_BOX_ROW(win->current_row));
+  ClipPageRecord *cpr = g_ptr_array_index(win->clip_page_records, idx);
+  save_clip_page_record(win, cpr);
+}
+
+static void load_clip_page_record(MyWindow *win, ClipPageRecord *cpr) {
+  gtk_spin_button_set_value(win->start_ts_spin_btn, (double)cpr->start_ts);
+  gtk_spin_button_set_value(win->end_ts_spin_btn, (double)cpr->end_ts);
 }
 
 static void recalc_total(MyWindow *win) {
@@ -291,24 +299,12 @@ static void on_sidebar_row_selected(GtkListBox *box, GtkListBoxRow *row,
     return;
 
   // Save current row
-  int idx = gtk_list_box_row_get_index(GTK_LIST_BOX_ROW(win->current_row));
-  ClipPageRecord *cpr = g_ptr_array_index(win->clip_page_records, idx);
-  cpr->start_ts = gtk_spin_button_get_value_as_int(win->start_ts_spin_btn);
-  cpr->end_ts = gtk_spin_button_get_value_as_int(win->end_ts_spin_btn);
-  cpr->preview_start_s =
-      gtk_spin_button_get_value_as_int(win->preview_start_spin_btn);
-  cpr->preview_end_s =
-      gtk_spin_button_get_value_as_int(win->preview_end_spin_btn);
+  save_current_clip_page_record(win);
 
   // Load selected row
-  idx = gtk_list_box_row_get_index(row);
-  cpr = g_ptr_array_index(win->clip_page_records, idx);
-  gtk_spin_button_set_value(win->start_ts_spin_btn, (double)cpr->start_ts);
-  gtk_spin_button_set_value(win->end_ts_spin_btn, (double)cpr->end_ts);
-  gtk_spin_button_set_value(win->preview_start_spin_btn,
-                            (double)cpr->preview_start_s);
-  gtk_spin_button_set_value(win->preview_end_spin_btn,
-                            (double)cpr->preview_end_s);
+  int idx = gtk_list_box_row_get_index(row);
+  ClipPageRecord *cpr = g_ptr_array_index(win->clip_page_records, idx);
+  load_clip_page_record(win, cpr);
 
   win->current_row = CLIP_ROW(row);
 }
@@ -422,6 +418,60 @@ static void on_output_clicked(GtkButton *btn, void *data) {
   g_object_unref(dlg);
 }
 
+static ClipData *get_clip_data(MyWindow *win, size_t *len) {
+  save_current_clip_page_record(win);
+  size_t i = 0;
+  ClipData *res = NULL; // = malloc(sizeof(ClipData));
+  GtkListBoxRow *row;
+
+  while ((row = gtk_list_box_get_row_at_index(win->sidebar_list_box, i))) {
+    res = realloc(res, sizeof(ClipData) * (i + 1));
+    res[i] = (ClipData){
+        .name = clip_row_get_label_text(CLIP_ROW(row)),
+        .info = g_ptr_array_index(win->clip_page_records, i),
+    };
+    i++;
+  }
+  *len = i;
+  return res;
+}
+
+static void on_save_select_file_finish(GObject *dlg, GAsyncResult *res,
+                                       void *data) {
+  MyWindow *win = data;
+  GFile *file = gtk_file_dialog_save_finish(GTK_FILE_DIALOG(dlg), res, NULL);
+
+  if (!file) {
+    g_object_unref(win);
+    return;
+  }
+
+  size_t data_len;
+  ClipData *clip_data = get_clip_data(win, &data_len);
+  save_into_file(clip_data, data_len, file);
+  g_object_unref(file);
+  g_object_unref(win);
+}
+
+static void on_save_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+
+  // size_t data_len;
+  // ClipData *clip_data = get_clip_data(win, &data_len);
+  // serialize_clip_page_records(clip_data, data_len);
+  // free(clip_data);
+
+  GtkFileDialog *dlg = gtk_file_dialog_new();
+  gtk_file_dialog_set_title(dlg, "Choose file to save into");
+  gtk_file_dialog_set_modal(dlg, TRUE);
+
+  g_object_ref(data);
+  gtk_file_dialog_save(dlg, GTK_WINDOW(data), NULL, on_save_select_file_finish,
+                       win);
+  g_object_unref(dlg);
+}
+
 static void my_window_dispose(GObject *obj) {
   MyWindow *self = MY_WINDOW(obj);
 
@@ -503,6 +553,8 @@ static void my_window_class_init(MyWindowClass *klass) {
                                           on_end_ts_preview_now_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
                                           on_render_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_save_clicked);
 }
 
 static void my_window_init(MyWindow *self) {
