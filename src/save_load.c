@@ -4,11 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+const char *name_json_key = "name";
+const char *start_ts_json_key = "start_ts";
+const char *end_ts_json_key = "end_ts";
+
 char *serialize_clip_page_records(ClipData *data, size_t len,
                                   size_t *res_str_len) {
-  const char *name_json_key = "name";
-  const char *start_ts_json_key = "start_ts";
-  const char *end_ts_json_key = "end_ts";
 
   JsonArr *arr = malloc(sizeof(JsonArr));
   arr->len = len;
@@ -100,11 +101,97 @@ char *serialize_clip_page_records(ClipData *data, size_t len,
 void save_into_file(ClipData *data, size_t len, GFile *file) {
   size_t data_str_len;
   char *data_str = serialize_clip_page_records(data, len, &data_str_len);
-  GError *error = NULL;
+  GError *error;
 
   if (!g_file_replace_contents(file, data_str, data_str_len, NULL, FALSE,
                                G_FILE_CREATE_NONE, NULL, NULL, &error)) {
-    g_warning("write failed: %s\n", error->message);
+    g_warning("write failed: %s", error->message);
     g_clear_error(&error);
   }
+}
+
+bool load_from_file(GFile *file, ClipData **data, size_t *len) {
+  GError *error = NULL;
+  char *full_text;
+  size_t full_text_len;
+  if (!g_file_load_contents(file, NULL, &full_text, &full_text_len, NULL,
+                            &error)) {
+    g_warning("read failed: %s", error->message);
+    g_clear_error(&error);
+    return false;
+  }
+
+  const char *cursor = full_text;
+  JsonVal root;
+  if (!json_parse_val(&root, &cursor) || root.type != JSON_TYPE_ARR) {
+    json_free_val(&root);
+    g_free(full_text);
+    return false;
+  }
+
+  JsonArr *arr = root.as.arr_ptr;
+  *len = arr->len;
+  *data = malloc(sizeof(ClipData) * arr->len);
+
+  JsonVal **names = malloc(sizeof(JsonVal *) * arr->len);
+  JsonVal **start_tss = malloc(sizeof(JsonVal *) * arr->len);
+  JsonVal **end_tss = malloc(sizeof(JsonVal *) * arr->len);
+
+  for (size_t i = 0; i < arr->len; i++) {
+    JsonVal *val = &arr->values[i];
+    if (val->type != JSON_TYPE_OBJ)
+      goto fail;
+    JsonObj *obj = val->as.obj_ptr;
+
+    names[i] = json_value_by_key(obj, name_json_key);
+    if (!names[i] || names[i]->type != JSON_TYPE_STR)
+      goto fail;
+
+    start_tss[i] = json_value_by_key(obj, start_ts_json_key);
+    if (!start_tss[i] || start_tss[i]->type != JSON_TYPE_INT)
+      goto fail;
+
+    end_tss[i] = json_value_by_key(obj, end_ts_json_key);
+    if (!end_tss[i] || end_tss[i]->type != JSON_TYPE_INT)
+      goto fail;
+  }
+
+  for (size_t i = 0; i < arr->len; i++) {
+    JsonStr *str = names[i]->as.str_ptr;
+    char *buf = malloc(str->len + 1);
+    memcpy(buf, str->start, str->len);
+    buf[str->len] = '\0';
+    (*data)[i].name = buf;
+
+    ClipPageRecord *cpr = malloc(sizeof(ClipPageRecord));
+    cpr->start_ts = start_tss[i]->as.integer;
+    cpr->end_ts = end_tss[i]->as.integer;
+    (*data)[i].info = cpr;
+  }
+
+  free(names);
+  free(start_tss);
+  free(end_tss);
+  json_free_val(&root);
+  g_free(full_text);
+  return true;
+
+fail:
+  free(*data);
+  json_free_val(&root);
+  g_free(full_text);
+  free(names);
+  free(start_tss);
+  free(end_tss);
+  *data = NULL;
+  *len = 0;
+  return false;
+}
+
+void free_loaded_data(ClipData *data, size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    free((char *)data[i].name);
+    free((ClipPageRecord *)data[i].info);
+  }
+  free(data);
 }
