@@ -244,8 +244,14 @@ static void on_render_clicked(GtkButton *btn, void *data) {
   guint64 start_ts = gtk_spin_button_get_value_as_int(win->start_ts_spin_btn);
   guint64 end_ts = gtk_spin_button_get_value_as_int(win->end_ts_spin_btn);
   if (win->source_file)
-    ffmpeg_render(win->source_file, start_ts, end_ts, win->output_dir,
-                  output_name, win);
+    if (win->output_dir) {
+      ffmpeg_render(win->source_file, start_ts, end_ts, win->output_dir,
+                    output_name, win);
+    } else {
+      GtkAlertDialog *alert =
+          gtk_alert_dialog_new("Output directory isn't set");
+      gtk_alert_dialog_show(alert, GTK_WINDOW(win));
+    }
 }
 
 static gboolean on_decimal_timer_timeout(void *data) {
