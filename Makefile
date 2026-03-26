@@ -11,8 +11,8 @@ RES_H = src/resources.h
 
 SRC = src/main.c src/clip-row.c src/my-window.c src/ffmpeg.c \
 	  src/save_load.c src/json.c $(RES_C) $(RES_H)
-CFLAGS = -g -Wall -Wextra -Wpedantic $(shell pkg-config --cflags gtk4)
-LDFLAGS = $(shell pkg-config --libs gtk4)
+CFLAGS = -g -Wall -Wextra -Wpedantic $(shell pkg-config --cflags gtk4 gstreamer-1.0 gstreamer-video-1.0)
+LDFLAGS = $(shell pkg-config --libs gtk4 gstreamer-1.0 gstreamer-video-1.0)
 
 all: $(SRC)
 	$(CC) \
