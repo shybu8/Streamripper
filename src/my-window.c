@@ -235,6 +235,11 @@ static void on_end_ts_preview_now_clicked(GtkButton *btn, void *data) {
 static void on_render_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
+  if (!win->current_row) {
+    GtkAlertDialog *alert = gtk_alert_dialog_new("No clip to render");
+    gtk_alert_dialog_show(alert, GTK_WINDOW(win));
+    return;
+  }
   const char *output_name = clip_row_get_label_text(win->current_row);
   guint64 start_ts = gtk_spin_button_get_value_as_int(win->start_ts_spin_btn);
   guint64 end_ts = gtk_spin_button_get_value_as_int(win->end_ts_spin_btn);
@@ -295,11 +300,12 @@ static void on_sidebar_row_selected(GtkListBox *box, GtkListBoxRow *row,
                                     MyWindow *win) {
   (void)box;
 
-  if (win->current_row == CLIP_ROW(row))
+  if (!row || win->current_row == CLIP_ROW(row))
     return;
 
-  // Save current row
-  save_current_clip_page_record(win);
+  if (win->current_row)
+    // Save current row
+    save_current_clip_page_record(win);
 
   // Load selected row
   int idx = gtk_list_box_row_get_index(row);
@@ -315,6 +321,12 @@ static void add_clip(MyWindow *win) {
   ClipPageRecord *cpr = g_new(ClipPageRecord, 1);
   init_clip_page_record(cpr);
   g_ptr_array_add(win->clip_page_records, cpr);
+}
+
+static void remove_clip(MyWindow *win, size_t idx) {
+  GtkListBoxRow *r = gtk_list_box_get_row_at_index(win->sidebar_list_box, idx);
+  gtk_list_box_remove(win->sidebar_list_box, GTK_WIDGET(r));
+  g_ptr_array_remove_index(win->clip_page_records, idx);
 }
 
 static void on_add_clip_clicked(GtkButton *btn, void *data) {
@@ -457,11 +469,6 @@ static void on_save_clicked(GtkButton *btn, void *data) {
   (void)btn;
   MyWindow *win = data;
 
-  // size_t data_len;
-  // ClipData *clip_data = get_clip_data(win, &data_len);
-  // serialize_clip_page_records(clip_data, data_len);
-  // free(clip_data);
-
   GtkFileDialog *dlg = gtk_file_dialog_new();
   gtk_file_dialog_set_title(dlg, "Choose file to save into");
   gtk_file_dialog_set_modal(dlg, TRUE);
@@ -470,6 +477,70 @@ static void on_save_clicked(GtkButton *btn, void *data) {
   gtk_file_dialog_save(dlg, GTK_WINDOW(data), NULL, on_save_select_file_finish,
                        win);
   g_object_unref(dlg);
+}
+
+static void on_load_select_file_finish(GObject *dlg, GAsyncResult *res,
+                                       void *data) {
+  MyWindow *win = data;
+  GFile *file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(dlg), res, NULL);
+
+  if (!file) {
+    g_object_unref(win);
+    return;
+  }
+
+  size_t data_len;
+  ClipData *clip_data;
+  load_from_file(file, &clip_data, &data_len);
+
+  guint cpr_len = win->clip_page_records->len;
+
+  if (cpr_len > data_len)
+    for (size_t i = 0; i < cpr_len - data_len; i++)
+      remove_clip(win, data_len);
+  else if (cpr_len < data_len)
+    for (size_t i = 0; i < data_len - cpr_len; i++)
+      add_clip(win);
+
+  gtk_list_box_select_row(win->sidebar_list_box, NULL);
+  win->current_row = NULL;
+
+  for (size_t i = 0; i < data_len; i++) {
+    ClipRow *cr =
+        CLIP_ROW(gtk_list_box_get_row_at_index(win->sidebar_list_box, i));
+    clip_row_set_label_text(cr, clip_data[i].name);
+    ClipPageRecord *cpr = g_ptr_array_index(win->clip_page_records, i);
+    cpr->start_ts = clip_data[i].info->start_ts;
+    cpr->end_ts = clip_data[i].info->end_ts;
+  }
+
+  free_loaded_data(clip_data, data_len);
+}
+
+static void on_load_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+
+  GtkFileDialog *dlg = gtk_file_dialog_new();
+  gtk_file_dialog_set_title(dlg, "Choose file to load from");
+  gtk_file_dialog_set_modal(dlg, TRUE);
+
+  g_object_ref(data);
+  gtk_file_dialog_open(dlg, GTK_WINDOW(data), NULL, on_load_select_file_finish,
+                       win);
+  g_object_unref(dlg);
+}
+
+static void on_remove_clicked(GtkButton *btn, void *data) {
+  (void)btn;
+  MyWindow *win = data;
+
+  if (!win->current_row)
+    return;
+
+  int idx = gtk_list_box_row_get_index(GTK_LIST_BOX_ROW(win->current_row));
+  remove_clip(win, idx);
+  win->current_row = NULL;
 }
 
 static void my_window_dispose(GObject *obj) {
@@ -555,6 +626,10 @@ static void my_window_class_init(MyWindowClass *klass) {
                                           on_render_clicked);
   gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
                                           on_save_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_load_clicked);
+  gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(klass),
+                                          on_remove_clicked);
 }
 
 static void my_window_init(MyWindow *self) {

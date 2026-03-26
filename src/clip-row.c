@@ -23,3 +23,7 @@ ClipRow *clip_row_new() { return g_object_new(CLIP_TYPE_ROW, NULL); }
 const char *clip_row_get_label_text(ClipRow *cr) {
   return gtk_editable_get_text(GTK_EDITABLE(cr->label));
 }
+
+void clip_row_set_label_text(ClipRow *cr, const char *text) {
+  gtk_editable_set_text(GTK_EDITABLE(cr->label), text);
+}

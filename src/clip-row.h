@@ -5,3 +5,4 @@ G_DECLARE_FINAL_TYPE(ClipRow, clip_row, CLIP, ROW, GtkListBoxRow)
 
 ClipRow *clip_row_new();
 const char *clip_row_get_label_text(ClipRow *cr);
+void clip_row_set_label_text(ClipRow *cr, const char *text);

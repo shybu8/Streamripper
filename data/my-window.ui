@@ -56,6 +56,12 @@
 									</object>
 								</child>
 								<child>
+									<object class="GtkButton">
+										<property name="label">Load</property>
+										<signal name="clicked" handler="on_load_clicked"/>
+									</object>
+								</child>
+								<child>
 									<object class="GtkMenuButton" id="settings_mbtn">
 									</object>
 								</child>
@@ -284,8 +290,6 @@
 													<!-- Full preview button -->
 													<object class="GtkButton" id="preview_full_btn">
 														<property name="label">Full</property>
-														<property name="halign">start</property>
-														<property name="hexpand">false</property>
 														<signal name="clicked" handler="on_preview_full_clicked"/>
 													</object>
 												</child>
@@ -293,9 +297,20 @@
 													<!-- Render button -->
 													<object class="GtkButton" id="render_btn">
 														<property name="label">Render</property>
-														<property name="halign">start</property>
-														<property name="hexpand">false</property>
 														<signal name="clicked" handler="on_render_clicked"/>
+													</object>
+												</child>
+												<child>
+													<!-- Expander -->
+													<object class="GtkBox">
+														<property name="vexpand">true</property>
+													</object>
+												</child>
+												<child>
+													<!-- Remove button -->
+													<object class="GtkButton">
+														<property name="label">Remove</property>
+														<signal name="clicked" handler="on_remove_clicked"/>
 													</object>
 												</child>
 											</object>
